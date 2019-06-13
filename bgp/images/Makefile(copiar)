@@ -1,0 +1,40 @@
+
+k_setup :
+	kubectl apply -f mongodb/mongo-statefulset.yaml
+	kubectl apply -f mongodb/mongo-service.yaml
+
+	kubectl apply -f strapi/deployment.yaml
+	kubectl apply -f strapi/service.yaml
+	kubectl apply -f strapi/ingress.yaml 
+
+d_setup:
+	sudo docker-compose -f docker-compose.yml -p tp6 up -d
+
+	sudo docker exec -ti tp6_bind9_1 route del default;
+	sudo docker exec -ti tp6_bgp_1 route del default;
+	sudo docker exec -ti tp6_host1_1 route del default;
+	sudo docker exec -ti tp6_bind9_1 route add default gw 200.18.13.2;
+	sudo docker exec -ti tp6_host1_1 route add default gw 200.18.12.2;
+
+
+k_clean:
+	kubectl delete -f strapi/deployment.yaml
+	kubectl delete -f strapi/service.yaml
+	kubectl delete -f strapi/ingress.yaml
+	kubectl delete -f mongodb/mongo-service.yaml
+	kubectl delete -f mongodb/mongo-statefulset.yaml
+
+d_clean:
+	sudo docker-compose -f docker-compose.yml -p tp6 down
+
+gui:
+	#microk8s.kubectl proxy --accept-hosts=.* --address=0.0.0.0 &
+	chromium-browser http://192.168.56.100:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/ &
+
+strapi_own:
+	chromium-browser https://z.efn.unc.edu.ar/admin &
+
+strapi_other:
+	chromium-browser https://b.efn.unc.edu.ar/admin &		
+
+.PHONY: k_setup k_clean d_setup d_clean strapi_own strapi_other

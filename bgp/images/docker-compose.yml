@@ -7,6 +7,7 @@ services:
       - ./../volumes/bgp/b1/zebra.conf:/etc/quagga/zebra.conf:ro
       - ./../volumes/bgp/b1/bgpd.conf:/etc/quagga/bgpd.conf:ro
       - ./../volumes/bgp/supervisord.conf:/etc/supervisord.conf:ro
+      - ./../volumes/bgp/b1/ospfd.conf:/etc/quagga/ospfd.conf:ro
     image: bgp:AS6600
     privileged: true
     ports:
@@ -22,31 +23,53 @@ services:
       nr1:
         ipv4_address: 200.9.21.3
       nr2:
-        ipv4_address: 200.9.21.35
+        ipv4_address: 200.9.21.34
       oam:
         ipv4_address: 70.0.0.6
-  r1:
-    build: ./../images/ospf/.
+
+  h1:
+    build: ./../images/h1/.
     volumes:
-      - ./../volumes/ospf/r1/zebra.conf:/etc/quagga/zebra.conf:ro
-      - ./../volumes/ospf/r1/ospfd.conf:/etc/quagga/ospfd.conf:ro
-      - ./../volumes/ospf/supervisord.conf:/etc/supervisord.conf:ro
-    image: ospf:AS6600
+      - ./../resolv.conf:/etc/resolv.conf
+    #  - ./../volumes/ospf/r1/ospfd.conf:/etc/quagga/ospfd.conf:ro
+    #  - ./../volumes/ospf/supervisord.conf:/etc/supervisord.conf:ro
+    image: h1
     privileged: true
-    ports:
-      #admin
-      - 10011:2601
-      #ospf
-      - 10012:2604
-      #bgp
-      - 10014:2605
+    #command: top
     networks:
       nr0:
-        ipv4_address: 200.9.20.2
-      nr1:
-        ipv4_address: 200.9.21.2
+        ipv4_address: 200.9.20.20
+    command: top
+    #run: route add default gw 200.9.20.3    
+
+  h2:
+    build: ./../images/h1/.
+    volumes:
+      - ./../resolv.conf:/etc/resolv.conf
+    #  - ./../volumes/ospf/r1/ospfd.conf:/etc/quagga/ospfd.conf:ro
+    #  - ./../volumes/ospf/supervisord.conf:/etc/supervisord.conf:ro
+    image: h1
+    privileged: true
+    command: top
+    networks:
       nr2:
-        ipv4_address: 200.9.21.34
+        ipv4_address: 200.9.21.38
+
+  DNSFrame:
+    build: ./../images/dns/.
+    image: dns:TP6
+    privileged: true
+    restart: always
+    dns: 127.0.0.1
+    ports:
+      - 10000:10000
+      - "200.9.21.32:53:53/udp"
+      - "200.9.21.32:53:53/tcp"
+    networks:
+     nr2:
+      ipv4_address: 200.9.21.36
+
+        
 
 networks:
   nr0:
@@ -54,7 +77,9 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 200.9.20.0/24
+        - subnet: 200.9.20.0/24 
+          #gateway: 200.9.20.3
+        
   nr1:
     driver: "bridge"
     ipam:
@@ -67,6 +92,7 @@ networks:
       driver: default
       config:
         - subnet: 200.9.21.32/29
+          #gateway: 200.9.21.34
   oam:
     driver: "bridge"
     ipam:

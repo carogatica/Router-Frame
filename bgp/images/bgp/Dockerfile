@@ -11,6 +11,6 @@ RUN echo "bgpd=yes" > /etc/quagga/daemons
 RUN echo "ospfd=yes" >> /etc/quagga/daemons
 RUN echo "zebra=yes" >> /etc/quagga/daemons
 
-RUN touch /etc/supervisord.conf
+#RUN touch /etc/supervisord.conf
 
 ENTRYPOINT ["/usr/bin/supervisord"]
